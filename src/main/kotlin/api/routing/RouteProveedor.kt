@@ -156,7 +156,7 @@ fun Application.routeProvedor(){
                 }else {
                     call.respond(
                         HttpStatusCode.OK,GenericRespose(isSuccess = false,
-                            data = "Error Update rows are affected $noOfRowsAffected\"")
+                            data = "Error Update rows are affected $noOfRowsAffected")
                     )
                 }
 
