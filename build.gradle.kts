@@ -33,8 +33,8 @@ dependencies {
     implementation(libs.ktor.serialization.gson)
 
     implementation( "org.ktorm:ktorm-core:4.1.1")
-
     implementation("com.mysql:mysql-connector-j:9.2.0")
+    implementation("at.favre.lib:bcrypt:0.9.0")
 
 
 }

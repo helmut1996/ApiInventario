@@ -2,10 +2,7 @@ package com.helcode
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.helcode.api.routing.routeEstado
-import com.helcode.api.routing.routePermiso
-import com.helcode.api.routing.routeProducto
-import com.helcode.api.routing.routeProvedor
+import com.helcode.api.routing.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -19,4 +16,5 @@ fun Application.configureRouting() {
     routeEstado()
     routePermiso()
     routeProducto()
+    routeUsuarios()
 }
