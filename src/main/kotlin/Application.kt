@@ -1,5 +1,6 @@
 package com.helcode
 
+import com.helcode.api.services.AuthService
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
@@ -7,7 +8,8 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
+    val authService = AuthService(environment.config)
     configureSerialization()
     configureSecurity()
-    configureRouting()
+    configureRouting(authService)
 }

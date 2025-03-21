@@ -3,9 +3,9 @@ package com.helcode.api.routing
 import api.model.Estado
 import com.helcode.api.Database.DBConnection
 import com.helcode.api.Database.Entity.EntityEstado
+import com.helcode.api.services.AuthService
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
@@ -13,9 +13,9 @@ import org.ktorm.dsl.from
 import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 
-fun Application.routeEstado() {
+fun Route.routeEstado() {
     val db: Database = DBConnection.getDatabaseInstance()
-    routing {
+
 
             get("/Estados")
             {
@@ -47,5 +47,5 @@ fun Application.routeEstado() {
                 }
             }
 
-    }
+
 }

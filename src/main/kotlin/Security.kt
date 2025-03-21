@@ -11,19 +11,20 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Application.configureSecurity() {
-    // Please read the jwt property from the config file if you are using EngineMain
-    val jwtAudience = "jwt-audience"
-    val jwtDomain = "https://jwt-provider-domain/"
-    val jwtRealm = "ktor sample app"
-    val jwtSecret = "secret"
+    val config = environment.config
+    val jwtSecret = config.property("jwt.secret").getString()
+    val jwtIssuer = config.property("jwt.issuer").getString()
+    val jwtAudience = config.property("jwt.audience").getString()
+    val jwtRealm = config.property("jwt.realm").getString()
+
     authentication {
-        jwt {
+        jwt("auth-jwt") {
             realm = jwtRealm
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(jwtSecret))
+                    .withIssuer(jwtIssuer)
                     .withAudience(jwtAudience)
-                    .withIssuer(jwtDomain)
                     .build()
             )
             validate { credential ->

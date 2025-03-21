@@ -4,19 +4,19 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.helcode.api.Database.DBConnection
 import com.helcode.api.Database.Entity.EntityUsuarios
 import com.helcode.api.model.Usuarios
+import com.helcode.api.services.AuthService
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
 import org.ktorm.dsl.*
 
-fun Application.routeUsuarios(){
+fun Route.routeUsuarios() {
     val db: Database = DBConnection.getDatabaseInstance()
 
-    routing {
+
         get("/Usuarios") {
 
             try {
@@ -112,5 +112,5 @@ fun Application.routeUsuarios(){
 
 
         }
-    }
+
 }

@@ -3,6 +3,7 @@ package com.helcode.api.routing
 import api.model.Permisos
 import com.helcode.api.Database.DBConnection
 import com.helcode.api.Database.Entity.EntityPermisos
+import com.helcode.api.services.AuthService
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -13,9 +14,9 @@ import org.ktorm.dsl.from
 import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 
-fun Application.routePermiso(){
+fun Route.routePermiso() {
     val db: Database = DBConnection.getDatabaseInstance()
-    routing {
+
         get("/Permisos")
         {
             try {
@@ -44,5 +45,4 @@ fun Application.routePermiso(){
                 println("Error al conectar: ${e.message}")
             }
         }
-    }
 }

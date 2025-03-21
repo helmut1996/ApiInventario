@@ -3,10 +3,10 @@ package com.helcode.api.routing
 import api.model.Productos
 import com.helcode.api.Database.DBConnection
 import com.helcode.api.Database.Entity.EntityProductos
+import com.helcode.api.services.AuthService
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -15,10 +15,9 @@ import org.ktorm.dsl.*
 import java.io.File
 import java.nio.file.Paths
 
-fun Application.routeProducto(){
+fun Route.routeProducto() {
     val db: Database = DBConnection.getDatabaseInstance()
 
-    routing {
         get("/Productos")
         {
             try {
@@ -285,6 +284,6 @@ fun Application.routeProducto(){
                 println("Error al Conectar ${e.message}")
             }
         }
-    }
+
 
 }
