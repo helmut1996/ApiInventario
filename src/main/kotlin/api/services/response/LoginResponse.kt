@@ -1,4 +1,4 @@
-package com.helcode.api.model.response
+package com.helcode.api.services.response
 
 import kotlinx.serialization.Serializable
 

@@ -1,5 +1,6 @@
 package com.helcode
 
+import com.helcode.api.security.configureSecurity
 import com.typesafe.config.ConfigFactory
 import io.ktor.server.application.*
 import io.ktor.server.config.*
