@@ -2,7 +2,8 @@ package com.helcode.api.routing
 
 import api.model.Proveedor
 import com.helcode.api.Database.DBConnection
-import com.helcode.api.Database.Entity.EntityProveedor
+import com.helcode.api.repository.proveedorRepository.ProveedorRepository
+import com.helcode.api.repository.proveedorRepository.ProveedorRepositoryImpl
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,25 +12,18 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
-import org.ktorm.dsl.*
+
 
 fun Application.routeProvedor(){
     val db:Database = DBConnection.getDatabaseInstance()
+    val proveedorRepository: ProveedorRepository = ProveedorRepositoryImpl(db)
     routing {
         authenticate("auth-jwt") {
             post("/registerProveedor") {
 
                 try {
                     val proveedor:Proveedor = call.receive()
-                    val noOfRowsAffected = db.insert( EntityProveedor)
-                    {
-                        set(it.nomProveedor, proveedor.nomProveedor)
-                        set(it.numContacto, proveedor.numContacto)
-                        set(it.direccion, proveedor.direccion)
-                        set(it.email, proveedor.email)
-
-
-                    }
+                    val noOfRowsAffected = proveedorRepository.insertProveedor(proveedor)
 
                     if (noOfRowsAffected >0 ){
                         call.respond(
@@ -52,17 +46,7 @@ fun Application.routeProvedor(){
             get("/Proveedores")
             {
                 try {
-                    val listP = db.from(EntityProveedor)
-                        .select()
-                        .map {
-                            Proveedor(
-                                idProveedor = it[EntityProveedor.idProveedor],
-                                numContacto = it[EntityProveedor.numContacto],
-                                nomProveedor = it[EntityProveedor.nomProveedor],
-                                direccion = it[EntityProveedor.direccion],
-                                email = it[EntityProveedor.email]
-                            )
-                        }
+                    val listP = proveedorRepository.getProveedor()
 
                     if (listP.isNotEmpty()){
                         call.respond(
@@ -86,21 +70,7 @@ fun Application.routeProvedor(){
                 try {
                     val proveedorIdsr = call.parameters["idProveedor"]
                     val proveedorId = proveedorIdsr?.toInt() ?: -1
-                    val proveedor = db.from(EntityProveedor)
-                        .select()
-                        .where{
-                            EntityProveedor.idProveedor eq proveedorId
-                        }
-                        .map {
-                            Proveedor(
-                                idProveedor = it[EntityProveedor.idProveedor],
-                                numContacto = it[EntityProveedor.numContacto],
-                                nomProveedor = it[EntityProveedor.nomProveedor],
-                                direccion = it[EntityProveedor.direccion],
-                                email = it[EntityProveedor.email]
-                            )
-                        }
-                        .firstOrNull()
+                    val proveedor = proveedorRepository.getProveedorById(proveedorId)
 
                     if (proveedor != null){
                         call.respond(
@@ -130,18 +100,7 @@ fun Application.routeProvedor(){
                     val proveedorId = proveedorIdsr?.toInt() ?: -1
                     val proveedorReq:Proveedor = call.receive()
 
-                    val noOfRowsAffected = db.update( EntityProveedor)
-                    {
-                        set(it.nomProveedor, proveedorReq.nomProveedor)
-                        set(it.numContacto, proveedorReq.numContacto)
-                        set(it.direccion, proveedorReq.direccion)
-                        set(it.email, proveedorReq.email)
-
-                        where{
-                            it.idProveedor eq proveedorId
-                        }
-
-                    }
+                    val noOfRowsAffected = proveedorRepository.updateProveedor(proveedorId,proveedorReq)
 
 
                     if (noOfRowsAffected >0){
@@ -151,7 +110,7 @@ fun Application.routeProvedor(){
                         )
                     }else {
                         call.respond(
-                            HttpStatusCode.OK,GenericRespose(isSuccess = false,
+                            HttpStatusCode.BadRequest,GenericRespose(isSuccess = false,
                                 data = "Error Update rows are affected $noOfRowsAffected")
                         )
                     }
@@ -171,11 +130,7 @@ fun Application.routeProvedor(){
                     val proveedorId = proveedorIdsr?.toInt() ?: -1
 
 
-                    val noOfRowsAffected = db.delete( EntityProveedor)
-                    {
-                        it.idProveedor eq  proveedorId
-
-                    }
+                    val noOfRowsAffected = proveedorRepository .deleteProveedor(proveedorId)
 
 
                     if (noOfRowsAffected >0){

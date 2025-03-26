@@ -1,32 +1,23 @@
 package com.helcode.api.routing
 
-import api.model.Permisos
 import com.helcode.api.Database.DBConnection
-import com.helcode.api.Database.Entity.EntityPermisos
+import com.helcode.api.repository.permisoRepository.PermisosRepository
+import com.helcode.api.repository.permisoRepository.PermisosRepsositoryImpl
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
-import org.ktorm.dsl.from
-import org.ktorm.dsl.map
-import org.ktorm.dsl.select
 
 fun Application.routePermiso(){
     val db: Database = DBConnection.getDatabaseInstance()
+    val permisoRepository: PermisosRepository = PermisosRepsositoryImpl(db)
     routing {
         get("/Permisos")
         {
             try {
-                val listPermiso = db.from(EntityPermisos)
-                    .select()
-                    .map {
-                        Permisos(
-                            idPermiso = it[EntityPermisos.idPermiso],
-                            permiso =  it[EntityPermisos.permiso],
-                        )
-                    }
+                val listPermiso = permisoRepository.getPermisos()
 
                 if (listPermiso.isNotEmpty()){
                     call.respond(

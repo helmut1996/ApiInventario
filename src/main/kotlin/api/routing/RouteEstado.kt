@@ -2,33 +2,24 @@ package com.helcode.api.routing
 
 import api.model.Estado
 import com.helcode.api.Database.DBConnection
-import com.helcode.api.Database.Entity.EntityEstado
+import com.helcode.api.repository.estadoRepository.EstadoRepository
+import com.helcode.api.repository.estadoRepository.EstadoRepositoryImpl
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
-import org.ktorm.dsl.from
-import org.ktorm.dsl.map
-import org.ktorm.dsl.select
 
 fun Application.routeEstado() {
     val db: Database = DBConnection.getDatabaseInstance()
+    val estadoRepository: EstadoRepository = EstadoRepositoryImpl(db)
     routing {
 
             get("/Estados")
             {
                 try {
-                    val listE = db.from(EntityEstado)
-                        .select()
-                        .map {
-                            Estado(
-                                idEstado = it[EntityEstado.idEstado],
-                                estado =  it[EntityEstado.estado],
-                                descripcion = it[EntityEstado.descripcion],
-                            )
-                        }
+                    val listE = estadoRepository.getEstado()
 
                     if (listE.isNotEmpty()){
                         call.respond(
