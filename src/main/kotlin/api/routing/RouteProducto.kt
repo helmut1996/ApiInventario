@@ -2,7 +2,8 @@ package com.helcode.api.routing
 
 import api.model.Productos
 import com.helcode.api.Database.DBConnection
-import com.helcode.api.Database.Entity.EntityProductos
+import com.helcode.api.repository.productosRepository.ProductosRepository
+import com.helcode.api.repository.productosRepository.ProductosRepositoryImpl
 import com.helcode.api.services.GenericRespose
 import io.ktor.http.*
 import io.ktor.http.content.*
@@ -12,33 +13,18 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.ktorm.database.Database
-import org.ktorm.dsl.*
-import java.io.File
-import java.nio.file.Paths
+
 
 fun Application.routeProducto(){
     val db: Database = DBConnection.getDatabaseInstance()
+    val repoProductos: ProductosRepository = ProductosRepositoryImpl(db)
 
     routing {
         authenticate("auth-jwt") {
             get("/Productos")
             {
                 try {
-                    val listP = db.from(EntityProductos)
-                        .select()
-                        .map {
-                            Productos(
-                                id = it[EntityProductos.id],
-                                idProducto = it[EntityProductos.idProducto],
-                                numProducto = it[EntityProductos.numProducto],
-                                nomSerie = it[EntityProductos.nomSerie],
-                                descripcion = it[EntityProductos.descripcion],
-                                stock = it[EntityProductos.stock],
-                                precio = it[EntityProductos.precio],
-                                url_imagen = it[EntityProductos.url_imagen],
-                                idProveedor = it[EntityProductos.idProveedor],
-                            )
-                        }
+                    val listP = repoProductos.getProducto()
 
                     if (listP.isNotEmpty()){
                         call.respond(
@@ -62,24 +48,7 @@ fun Application.routeProducto(){
                 try{
                     val productoIdsr = call.parameters["id"]
                     val productoId = productoIdsr?.toInt() ?: -1
-                    val producto =  db.from(EntityProductos)
-                        .select()
-                        .where{EntityProductos.id eq productoId}
-                        .map {
-                            Productos(
-                                id = it[EntityProductos.id],
-                                idProducto = it[EntityProductos.idProducto],
-                                numProducto = it[EntityProductos.numProducto],
-                                nomSerie = it[EntityProductos.nomSerie],
-                                stock = it[EntityProductos.stock],
-                                precio = it[EntityProductos.precio],
-                                descripcion = it[EntityProductos.descripcion],
-                                idProveedor = it[EntityProductos.idProveedor],
-                                url_imagen = it[EntityProductos.url_imagen]
-
-                            )
-                        }
-                        .firstOrNull()
+                    val producto = repoProductos.getProductoById(productoId)
 
                     if (producto !=null){
                         call.respond(
@@ -101,14 +70,11 @@ fun Application.routeProducto(){
 
 
 
+
             post("/NuevoProducto") {
                 val multipart = call.receiveMultipart()
                 var producto: Productos? = null
                 var imageUrl: String? = null
-
-                val desktopPath = Paths.get(System.getProperty("user.home"), "Desktop", "imagenes_productos").toString()
-                val directory = File(desktopPath)
-                if (!directory.exists()) directory.mkdirs()
 
                 multipart.forEachPart { part ->
                     println("Recibido: ${part.name}") // LOG PARA DEBUG
@@ -126,21 +92,7 @@ fun Application.routeProducto(){
                         }
 
                         is PartData.FileItem -> {
-                            val fileName = "${System.currentTimeMillis()}_${part.originalFileName ?: "temp.jpg"}"
-                            println("Imagen recibida: $fileName")
-                            val file = File(directory, fileName)
-
-                            try {
-                                part.streamProvider().use { input ->
-                                    file.outputStream().buffered().use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-                                imageUrl = file.absolutePath
-                                println("Imagen guardada en: $imageUrl")
-                            } catch (e: Exception) {
-                                println("Error al guardar imagen: ${e.message}")
-                            }
+                            imageUrl = repoProductos.saveImage(part)
                         }
 
                         else -> {}
@@ -152,17 +104,12 @@ fun Application.routeProducto(){
                     val nuevoProducto = producto!!.copy(url_imagen = imageUrl)
 
                     try {
-                        db.insert(EntityProductos) {
-                            set(it.descripcion, nuevoProducto.descripcion)
-                            set(it.precio, nuevoProducto.precio)
-                            set(it.nomSerie, nuevoProducto.nomSerie)
-                            set(it.idProveedor, nuevoProducto.idProveedor)
-                            set(it.numProducto, nuevoProducto.numProducto)
-                            set(it.idProducto, nuevoProducto.idProducto)
-                            set(it.stock, nuevoProducto.stock)
-                            set(it.url_imagen, nuevoProducto.url_imagen)
+                        val productoInsert = repoProductos.insertProducto(nuevoProducto)
+                        if (productoInsert != null) {
+                            call.respond(HttpStatusCode.Created, productoInsert)
+                        } else {
+                            call.respond(HttpStatusCode.InternalServerError, "Error al insertar el producto")
                         }
-                        call.respond(HttpStatusCode.Created, nuevoProducto)
                     } catch (e: Exception) {
                         e.printStackTrace() // Imprime el error en la consola
                         call.respond(HttpStatusCode.InternalServerError, "Error en el servidor: ${e.localizedMessage}")
@@ -171,7 +118,6 @@ fun Application.routeProducto(){
                     call.respond(HttpStatusCode.BadRequest, "Datos insuficientes")
                 }
             }
-
 
             put("/ActualizarProducto/{id}") {
                 val multipart = call.receiveMultipart()
@@ -184,10 +130,6 @@ fun Application.routeProducto(){
                     return@put
                 }
 
-                val desktopPath = Paths.get(System.getProperty("user.home"), "Desktop", "imagenes_productos").toString()
-                val directory = File(desktopPath)
-                if (!directory.exists()) directory.mkdirs()
-
                 multipart.forEachPart { part ->
                     when (part) {
                         is PartData.FormItem -> {
@@ -197,24 +139,13 @@ fun Application.routeProducto(){
                                 "nomSerie" -> producto = (producto ?: Productos()).copy(nomSerie = part.value)
                                 "idProveedor" -> producto = (producto ?: Productos()).copy(idProveedor = part.value.toIntOrNull() ?: 0)
                                 "numProducto" -> producto = (producto ?: Productos()).copy(numProducto = part.value)
+                                "idProducto" -> producto = (producto ?: Productos()).copy(idProducto = part.value)
                                 "stock" -> producto = (producto ?: Productos()).copy(stock = part.value.toIntOrNull() ?: 0)
                             }
                         }
 
                         is PartData.FileItem -> {
-                            val fileName = "${System.currentTimeMillis()}_${part.originalFileName ?: "temp.jpg"}"
-                            val file = File(directory, fileName)
-
-                            try {
-                                part.streamProvider().use { input ->
-                                    file.outputStream().buffered().use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-                                imageUrl = file.absolutePath
-                            } catch (e: Exception) {
-                                println("Error al guardar imagen: ${e.message}")
-                            }
+                            imageUrl = repoProductos.saveImage(part)
                         }
 
                         else -> {}
@@ -224,26 +155,14 @@ fun Application.routeProducto(){
 
                 if (producto != null) {
                     try {
-                        val updateQuery = db.update(EntityProductos) {
-                            where { it.id eq productoId }
-
-                            producto?.let { p ->
-                                set(EntityProductos.idProducto, p.idProducto)
-                                set(EntityProductos.descripcion, p.descripcion)
-                                set(EntityProductos.precio, p.precio)
-                                set(EntityProductos.nomSerie, p.nomSerie)
-                                set(EntityProductos.idProveedor, p.idProveedor)
-                                set(EntityProductos.numProducto, p.numProducto)
-                                set(EntityProductos.stock, p.stock)
-                            }
-
-
-                            if (imageUrl != null) {
-                                set(it.url_imagen, imageUrl!!)
-                            }
+                        // If there is a new image, update the url_imagen
+                        if (imageUrl != null) {
+                            producto = producto!!.copy(url_imagen = imageUrl)
                         }
 
-                        if (updateQuery == 0) {
+                        val noOfRowsAffected = repoProductos.updateProducto(productoId, producto!!)
+
+                        if (noOfRowsAffected == 0) {
                             call.respond(HttpStatusCode.NotFound, "Producto no encontrado")
                         } else {
                             call.respond(HttpStatusCode.OK, "Producto actualizado correctamente")
@@ -253,20 +172,16 @@ fun Application.routeProducto(){
                         call.respond(HttpStatusCode.InternalServerError, "Error en el servidor: ${e.localizedMessage}")
                     }
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, "Datos insuficientes para la actualización")
+                    call.respond(HttpStatusCode.BadRequest, "Datos insuficientes para la actualizacion")
                 }
             }
-
 
             delete("/DeleteProducto/{id}") {
                 try {
                     val productoIdsr = call.parameters["id"]
                     val productoId = productoIdsr?.toInt() ?: -1
 
-                    val noOfRowsAffected = db.delete(EntityProductos)
-                    {
-                        it.id eq productoId
-                    }
+                    val noOfRowsAffected = repoProductos.deleteProducto(productoId)
 
                     if (noOfRowsAffected > 0){
                         call.respond(
