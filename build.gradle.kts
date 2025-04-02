@@ -35,6 +35,9 @@ dependencies {
     implementation( "org.ktorm:ktorm-core:4.1.1")
     implementation("com.mysql:mysql-connector-j:9.2.0")
     implementation("at.favre.lib:bcrypt:0.9.0")
+    //cache redis
+    implementation(libs.ktor.simple.cache)
+    implementation(libs.ktor.simple.redis.cache)
 
 
 }
