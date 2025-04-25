@@ -36,10 +36,20 @@ fun Application.routeAuth(secret: String, issuer: String, audience: String, real
                     )
                     )
                 } else {
-                    call.respond(HttpStatusCode.Unauthorized, "Credenciales inválidas")
+                    call.respond(HttpStatusCode.Unauthorized, LoginResponse(
+                        message = "Credenciales inválidas",
+                        token = null,
+                        username = null
+                    )
+                    )
                 }
             } else {
-                call.respond(HttpStatusCode.Unauthorized, "Usuario no encontrado")
+                call.respond(HttpStatusCode.Unauthorized, LoginResponse(
+                    message = "Usuario no encontrado",
+                    token = null,
+                    username = null
+                )
+                )
             }
         }
     }
